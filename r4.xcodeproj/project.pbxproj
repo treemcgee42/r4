@@ -33,6 +33,12 @@
 		49F79EAF2C1DED8C00C3CFC1 /* Compute.metal in Sources */ = {isa = PBXBuildFile; fileRef = 49F79EAE2C1DED8C00C3CFC1 /* Compute.metal */; };
 		49F79EB02C1DED8C00C3CFC1 /* Compute.metal in Sources */ = {isa = PBXBuildFile; fileRef = 49F79EAE2C1DED8C00C3CFC1 /* Compute.metal */; };
 		49F79EB12C1DED8C00C3CFC1 /* Compute.metal in Sources */ = {isa = PBXBuildFile; fileRef = 49F79EAE2C1DED8C00C3CFC1 /* Compute.metal */; };
+		49F79EB32C1F36E500C3CFC1 /* VoxelVolumeSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49F79EB22C1F36E500C3CFC1 /* VoxelVolumeSystem.swift */; };
+		49F79EB42C1F36E500C3CFC1 /* VoxelVolumeSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49F79EB22C1F36E500C3CFC1 /* VoxelVolumeSystem.swift */; };
+		49F79EB52C1F36E500C3CFC1 /* VoxelVolumeSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49F79EB22C1F36E500C3CFC1 /* VoxelVolumeSystem.swift */; };
+		49F79EB72C1F41AC00C3CFC1 /* VoxelRayTracing.metal in Sources */ = {isa = PBXBuildFile; fileRef = 49F79EB62C1F41AC00C3CFC1 /* VoxelRayTracing.metal */; };
+		49F79EB82C1F41AC00C3CFC1 /* VoxelRayTracing.metal in Sources */ = {isa = PBXBuildFile; fileRef = 49F79EB62C1F41AC00C3CFC1 /* VoxelRayTracing.metal */; };
+		49F79EB92C1F41AC00C3CFC1 /* VoxelRayTracing.metal in Sources */ = {isa = PBXBuildFile; fileRef = 49F79EB62C1F41AC00C3CFC1 /* VoxelRayTracing.metal */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -56,6 +62,8 @@
 		49F79E942C17BA8000C3CFC1 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		49F79E962C17BA8000C3CFC1 /* r4_macOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = r4_macOS.entitlements; sourceTree = "<group>"; };
 		49F79EAE2C1DED8C00C3CFC1 /* Compute.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Compute.metal; sourceTree = "<group>"; };
+		49F79EB22C1F36E500C3CFC1 /* VoxelVolumeSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoxelVolumeSystem.swift; sourceTree = "<group>"; };
+		49F79EB62C1F41AC00C3CFC1 /* VoxelRayTracing.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = VoxelRayTracing.metal; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -102,6 +110,8 @@
 				49F79E662C17BA7E00C3CFC1 /* ShaderTypes.h */,
 				49F79E672C17BA8000C3CFC1 /* Assets.xcassets */,
 				49F79EAE2C1DED8C00C3CFC1 /* Compute.metal */,
+				49F79EB22C1F36E500C3CFC1 /* VoxelVolumeSystem.swift */,
+				49F79EB62C1F41AC00C3CFC1 /* VoxelRayTracing.metal */,
 			);
 			path = "r4 Shared";
 			sourceTree = "<group>";
@@ -285,6 +295,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				49F79E9A2C17BA8000C3CFC1 /* Renderer.swift in Sources */,
+				49F79EB72C1F41AC00C3CFC1 /* VoxelRayTracing.metal in Sources */,
+				49F79EB32C1F36E500C3CFC1 /* VoxelVolumeSystem.swift in Sources */,
 				49F79E972C17BA8000C3CFC1 /* Shaders.metal in Sources */,
 				49F79EAF2C1DED8C00C3CFC1 /* Compute.metal in Sources */,
 				49F79E722C17BA8000C3CFC1 /* GameViewController.swift in Sources */,
@@ -297,6 +309,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				49F79E9B2C17BA8000C3CFC1 /* Renderer.swift in Sources */,
+				49F79EB82C1F41AC00C3CFC1 /* VoxelRayTracing.metal in Sources */,
+				49F79EB42C1F36E500C3CFC1 /* VoxelVolumeSystem.swift in Sources */,
 				49F79E982C17BA8000C3CFC1 /* Shaders.metal in Sources */,
 				49F79EB02C1DED8C00C3CFC1 /* Compute.metal in Sources */,
 				49F79E822C17BA8000C3CFC1 /* GameViewController.swift in Sources */,
@@ -309,6 +323,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				49F79E9C2C17BA8000C3CFC1 /* Renderer.swift in Sources */,
+				49F79EB92C1F41AC00C3CFC1 /* VoxelRayTracing.metal in Sources */,
+				49F79EB52C1F36E500C3CFC1 /* VoxelVolumeSystem.swift in Sources */,
 				49F79E992C17BA8000C3CFC1 /* Shaders.metal in Sources */,
 				49F79EB12C1DED8C00C3CFC1 /* Compute.metal in Sources */,
 				49F79E922C17BA8000C3CFC1 /* GameViewController.swift in Sources */,

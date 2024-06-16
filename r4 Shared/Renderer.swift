@@ -28,8 +28,13 @@ class Renderer: NSObject, MTKViewDelegate {
     
     public let device: MTLDevice
     let commandQueue: MTLCommandQueue
+    var voxelComputePipelineState: ComputePipelineState
     var computePipelineState: MTLComputePipelineState!
     var outputTexture: MTLTexture!
+    var shaderLibrary: MTLLibrary
+    
+    var voxelVolumeSystem = VoxelVolumeSystem()
+    var accelerationStructure: AccelerationStructure
     
     let inFlightSemaphore = DispatchSemaphore(value: maxBuffersInFlight)
     
@@ -51,6 +56,7 @@ class Renderer: NSObject, MTKViewDelegate {
             print("Failed to create compute kernel")
             return nil
         }
+        self.shaderLibrary = library
         
         do {
             self.computePipelineState = try device.makeComputePipelineState(function: kernel)
@@ -59,14 +65,43 @@ class Renderer: NSObject, MTKViewDelegate {
             return nil
         }
         
+        // --- temporary for testing
+        
+        _ = voxelVolumeSystem.createEmptyVoxelVolume(
+            corner1: SIMD3<Float>(-1, -1, -6),
+            corner2: SIMD3<Float>(0, 0, -5))
+
+        self.accelerationStructure = voxelVolumeSystem.makeAccelerationStructure(device: device)!
+        self.voxelComputePipelineState = voxelVolumeSystem.createComputePipeline(device: device, shaderLibrary: library)!
+        
+        // --- end
+        
         super.init()
     }
     
     func render(to drawable: CAMetalDrawable) {
         _ = inFlightSemaphore.wait(timeout: DispatchTime.distantFuture)
         
-        guard let commandBuffer = commandQueue.makeCommandBuffer(),
-              let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
+        guard let commandBuffer = commandQueue.makeCommandBuffer() else {
+            return
+        }
+        
+        // --- Build acceleration structure
+        
+        guard let accelerationCommandEncoder = commandBuffer.makeAccelerationStructureCommandEncoder() else {
+            return
+        }
+        
+        accelerationCommandEncoder.build(
+            accelerationStructure: self.accelerationStructure.accelerationStructure,
+            descriptor: self.accelerationStructure.descriptor,
+            scratchBuffer: self.accelerationStructure.scratchBuffer,
+            scratchBufferOffset: 0)
+        accelerationCommandEncoder.endEncoding()
+        
+        // --- Rest
+        
+        guard let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
             return
         }
         
@@ -75,13 +110,40 @@ class Renderer: NSObject, MTKViewDelegate {
             semaphore.signal()
         }
         
-        commandEncoder.setComputePipelineState(computePipelineState)
+        // --- Old
+        
+//        commandEncoder.setComputePipelineState(computePipelineState)
+//        commandEncoder.setTexture(self.outputTexture, index: 0)
+//        
+//        var camera = Camera(position: SIMD3<Float>(0, 0, 1),
+//                            direction: SIMD3<Float>(0, 0, -1),
+//                            fov: 60 * .pi / 180)
+//        commandEncoder.setBytes(&camera, length: MemoryLayout<Camera>.size, index: 0)
+//        let gridSize = MTLSize(width: self.outputTexture.width,
+//                               height: outputTexture.height,
+//                               depth: 1)
+//        let threadGroupSize = MTLSize(width: 8, height: 8, depth: 1)
+//        commandEncoder.dispatchThreads(gridSize, threadsPerThreadgroup: threadGroupSize)
+//        
+//        commandEncoder.endEncoding()
+        
+        // --- New
+        
+        commandEncoder.setComputePipelineState(self.voxelComputePipelineState.computePipelineState)
+        
+        commandEncoder.setAccelerationStructure(
+            self.accelerationStructure.accelerationStructure,
+            bufferIndex: 0)
+        commandEncoder.setIntersectionFunctionTable(
+            self.voxelComputePipelineState.functionTable,
+            bufferIndex: 1)
+        
         commandEncoder.setTexture(self.outputTexture, index: 0)
         
         var camera = Camera(position: SIMD3<Float>(0, 0, 1),
                             direction: SIMD3<Float>(0, 0, -1),
                             fov: 60 * .pi / 180)
-        commandEncoder.setBytes(&camera, length: MemoryLayout<Camera>.size, index: 0)
+        commandEncoder.setBytes(&camera, length: MemoryLayout<Camera>.size, index: 2)
         let gridSize = MTLSize(width: self.outputTexture.width,
                                height: outputTexture.height,
                                depth: 1)
@@ -90,7 +152,7 @@ class Renderer: NSObject, MTKViewDelegate {
         
         commandEncoder.endEncoding()
         
-        // ---
+        // --- Copy texture to framebuffer for displaying.
         
         if let blitEncoder = commandBuffer.makeBlitCommandEncoder() {
             blitEncoder.copy(
