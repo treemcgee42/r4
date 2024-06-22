@@ -39,22 +39,16 @@ typedef NS_ENUM(EnumBackingType, TextureIndex)
     TextureIndexColor    = 0,
 };
 
-typedef struct
-{
-    matrix_float4x4 projectionMatrix;
-    matrix_float4x4 modelViewMatrix;
-} Uniforms;
-
 typedef struct {
     vector_float3 min;
     vector_float3 max;
 } BoundingBox;
 
-struct Camera {
+typedef struct {
     vector_float3 position;
     vector_float3 direction;
     float fov;
-};
+} Camera;
 
 typedef struct {
     size_t startIdx;
@@ -62,6 +56,10 @@ typedef struct {
     uint yExtent;
     uint zExtent;
 } Grid3dView;
+
+typedef struct {
+    Camera camera;
+} Uniforms;
 
 typedef struct {
     BoundingBox boundingBox;

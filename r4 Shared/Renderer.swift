@@ -14,7 +14,6 @@ import simd
 let maxBuffersInFlight = 3
 
 class Renderer: NSObject, MTKViewDelegate {
-    
     public let device: MTLDevice
     let commandQueue: MTLCommandQueue
     var voxelComputePipelineState: ComputePipelineState
@@ -22,10 +21,20 @@ class Renderer: NSObject, MTKViewDelegate {
     var outputTexture: MTLTexture!
     var shaderLibrary: MTLLibrary
     
+    
     var voxelVolumeSystem = VoxelVolumeSystem()
     var accelerationStructure: AccelerationStructure
     
+    var uniformBuffer: MTLBuffer!
+    var uniformBufferIdx = 0
+    var uniformBufferOffset = 0
+    
     let inFlightSemaphore = DispatchSemaphore(value: maxBuffersInFlight)
+    
+    // SCENE
+    var cameraPosition = SIMD3<Float>(0, 0, 1)
+    var cameraDirection = SIMD3<Float>(0, 0, -1)
+    var cameraFov: Float = 60 * .pi / 180
     
     init?(metalKitView: MTKView) {
         self.device = metalKitView.device!
@@ -67,6 +76,30 @@ class Renderer: NSObject, MTKViewDelegate {
         // --- end
         
         super.init()
+        
+        self.createUniformBuffers()
+    }
+    
+    private func createUniformBuffers() {
+        let size = MemoryLayout<Uniforms>.stride * maxBuffersInFlight;
+        self.uniformBuffer = device.makeBuffer(length: size, options: .storageModeShared)
+    }
+    
+    func draw(in view: MTKView) {
+        /// Per frame updates hare
+        guard let drawable = view.currentDrawable else {
+            return
+        }
+        render(to: drawable)
+        
+    }
+    
+    func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
+        /// Respond to drawable size or orientation changes here
+        
+        self.outputTexture = createTexture(device: self.device,
+                                           width: Int(size.width),
+                                           height: Int(size.height))
     }
     
     func render(to drawable: CAMetalDrawable) {
@@ -100,40 +133,23 @@ class Renderer: NSObject, MTKViewDelegate {
             semaphore.signal()
         }
         
-        // --- Old
-        
-//        commandEncoder.setComputePipelineState(computePipelineState)
-//        commandEncoder.setTexture(self.outputTexture, index: 0)
-//        
-//        var camera = Camera(position: SIMD3<Float>(0, 0, 1),
-//                            direction: SIMD3<Float>(0, 0, -1),
-//                            fov: 60 * .pi / 180)
-//        commandEncoder.setBytes(&camera, length: MemoryLayout<Camera>.size, index: 0)
-//        let gridSize = MTLSize(width: self.outputTexture.width,
-//                               height: outputTexture.height,
-//                               depth: 1)
-//        let threadGroupSize = MTLSize(width: 8, height: 8, depth: 1)
-//        commandEncoder.dispatchThreads(gridSize, threadsPerThreadgroup: threadGroupSize)
-//        
-//        commandEncoder.endEncoding()
-        
-        // --- New
+        self.updateUniforms()
         
         commandEncoder.setComputePipelineState(self.voxelComputePipelineState.computePipelineState)
         
+        // Bind buffers
+        commandEncoder.setBuffer(self.uniformBuffer, offset: self.uniformBufferOffset, index: 0)
         commandEncoder.setAccelerationStructure(
             self.accelerationStructure.accelerationStructure,
-            bufferIndex: 0)
+            bufferIndex: 1)
         commandEncoder.setIntersectionFunctionTable(
             self.voxelComputePipelineState.functionTable,
-            bufferIndex: 1)
+            bufferIndex: 2)
         
+        // Bind textures
         commandEncoder.setTexture(self.outputTexture, index: 0)
-        
-        var camera = Camera(position: SIMD3<Float>(0, 0, 1),
-                            direction: SIMD3<Float>(0, 0, -1),
-                            fov: 60 * .pi / 180)
-        commandEncoder.setBytes(&camera, length: MemoryLayout<Camera>.size, index: 2)
+
+        // Dispatch threads
         let gridSize = MTLSize(width: self.outputTexture.width,
                                height: outputTexture.height,
                                depth: 1)
@@ -164,21 +180,15 @@ class Renderer: NSObject, MTKViewDelegate {
         commandBuffer.commit()
     }
     
-    func draw(in view: MTKView) {
-        /// Per frame updates hare
-        guard let drawable = view.currentDrawable else {
-            return
-        }
-        render(to: drawable)
+    private func updateUniforms() {
+        self.uniformBufferOffset = MemoryLayout<Uniforms>.stride * self.uniformBufferIdx
+        let uniforms = self.uniformBuffer.contents().advanced(by: self.uniformBufferOffset).assumingMemoryBound(to: Uniforms.self)
         
-    }
-    
-    func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
-        /// Respond to drawable size or orientation changes here
+        uniforms.pointee.camera.position = self.cameraPosition
+        uniforms.pointee.camera.direction = self.cameraDirection
+        uniforms.pointee.camera.fov = self.cameraFov
         
-        self.outputTexture = createTexture(device: self.device,
-                                           width: Int(size.width),
-                                           height: Int(size.height))
+        self.uniformBufferIdx = (self.uniformBufferIdx + 1) % maxBuffersInFlight
     }
 }
 

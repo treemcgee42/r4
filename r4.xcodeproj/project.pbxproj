@@ -18,9 +18,6 @@
 		49F79E902C17BA8000C3CFC1 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49F79E8F2C17BA8000C3CFC1 /* AppDelegate.swift */; };
 		49F79E922C17BA8000C3CFC1 /* GameViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49F79E912C17BA8000C3CFC1 /* GameViewController.swift */; };
 		49F79E952C17BA8000C3CFC1 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 49F79E932C17BA8000C3CFC1 /* Main.storyboard */; };
-		49F79E972C17BA8000C3CFC1 /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = 49F79E642C17BA7E00C3CFC1 /* Shaders.metal */; };
-		49F79E982C17BA8000C3CFC1 /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = 49F79E642C17BA7E00C3CFC1 /* Shaders.metal */; };
-		49F79E992C17BA8000C3CFC1 /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = 49F79E642C17BA7E00C3CFC1 /* Shaders.metal */; };
 		49F79E9A2C17BA8000C3CFC1 /* Renderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49F79E652C17BA7E00C3CFC1 /* Renderer.swift */; };
 		49F79E9B2C17BA8000C3CFC1 /* Renderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49F79E652C17BA7E00C3CFC1 /* Renderer.swift */; };
 		49F79E9C2C17BA8000C3CFC1 /* Renderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49F79E652C17BA7E00C3CFC1 /* Renderer.swift */; };
@@ -42,7 +39,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		49F79E642C17BA7E00C3CFC1 /* Shaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
 		49F79E652C17BA7E00C3CFC1 /* Renderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Renderer.swift; sourceTree = "<group>"; };
 		49F79E662C17BA7E00C3CFC1 /* ShaderTypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ShaderTypes.h; sourceTree = "<group>"; };
 		49F79E672C17BA8000C3CFC1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -105,7 +101,6 @@
 		49F79E632C17BA7E00C3CFC1 /* r4 Shared */ = {
 			isa = PBXGroup;
 			children = (
-				49F79E642C17BA7E00C3CFC1 /* Shaders.metal */,
 				49F79E652C17BA7E00C3CFC1 /* Renderer.swift */,
 				49F79E662C17BA7E00C3CFC1 /* ShaderTypes.h */,
 				49F79E672C17BA8000C3CFC1 /* Assets.xcassets */,
@@ -297,7 +292,6 @@
 				49F79E9A2C17BA8000C3CFC1 /* Renderer.swift in Sources */,
 				49F79EB72C1F41AC00C3CFC1 /* VoxelRayTracing.metal in Sources */,
 				49F79EB32C1F36E500C3CFC1 /* VoxelVolumeSystem.swift in Sources */,
-				49F79E972C17BA8000C3CFC1 /* Shaders.metal in Sources */,
 				49F79EAF2C1DED8C00C3CFC1 /* Compute.metal in Sources */,
 				49F79E722C17BA8000C3CFC1 /* GameViewController.swift in Sources */,
 				49F79E702C17BA8000C3CFC1 /* AppDelegate.swift in Sources */,
@@ -311,7 +305,6 @@
 				49F79E9B2C17BA8000C3CFC1 /* Renderer.swift in Sources */,
 				49F79EB82C1F41AC00C3CFC1 /* VoxelRayTracing.metal in Sources */,
 				49F79EB42C1F36E500C3CFC1 /* VoxelVolumeSystem.swift in Sources */,
-				49F79E982C17BA8000C3CFC1 /* Shaders.metal in Sources */,
 				49F79EB02C1DED8C00C3CFC1 /* Compute.metal in Sources */,
 				49F79E822C17BA8000C3CFC1 /* GameViewController.swift in Sources */,
 				49F79E802C17BA8000C3CFC1 /* AppDelegate.swift in Sources */,
@@ -325,7 +318,6 @@
 				49F79E9C2C17BA8000C3CFC1 /* Renderer.swift in Sources */,
 				49F79EB92C1F41AC00C3CFC1 /* VoxelRayTracing.metal in Sources */,
 				49F79EB52C1F36E500C3CFC1 /* VoxelVolumeSystem.swift in Sources */,
-				49F79E992C17BA8000C3CFC1 /* Shaders.metal in Sources */,
 				49F79EB12C1DED8C00C3CFC1 /* Compute.metal in Sources */,
 				49F79E922C17BA8000C3CFC1 /* GameViewController.swift in Sources */,
 				49F79E902C17BA8000C3CFC1 /* AppDelegate.swift in Sources */,

@@ -15,7 +15,7 @@ struct BoundingBoxResult {
     float distance [[distance]];
 };
 
-ray generateCameraRay(constant Camera *camera,
+ray generateCameraRay(constant Camera& camera,
                       float outTextureWidth, float outTextureHeight,
                       uint2 threadPositionInGrid) {
     float aspectRatio = outTextureWidth / outTextureHeight;
@@ -26,20 +26,21 @@ ray generateCameraRay(constant Camera *camera,
                  float2(outTextureWidth, outTextureHeight));
     uv = uv * 2.0 - 1.0;
     uv.x *= aspectRatio;
+    uv.y *= -1.0;
     
     float3 rayDir = normalize(float3(uv.x, uv.y, -1.0));
-    float3 rayOrigin = camera->position;
+    float3 rayOrigin = camera.position;
     
     return ray(rayOrigin, rayDir);
 }
 
 [[kernel]]
-void rtKernel(primitive_acceleration_structure accelerationStructure [[buffer(0)]],
-              intersection_function_table<> functionTable [[buffer(1)]],
-              constant Camera *camera [[buffer(2)]],
+void rtKernel(constant Uniforms& uniforms [[buffer(0)]],
+              primitive_acceleration_structure accelerationStructure [[buffer(1)]],
+              intersection_function_table<> functionTable [[buffer(2)]],
               texture2d<float, access::write> outTexture [[texture(0)]],
               uint2 threadPositionInGrid [[thread_position_in_grid]]) {
-    ray r = generateCameraRay(camera,
+    ray r = generateCameraRay(uniforms.camera,
                               outTexture.get_width(), outTexture.get_height(),
                               threadPositionInGrid);
     

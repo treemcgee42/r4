@@ -10,10 +10,41 @@ import MetalKit
 
 // Our macOS specific view controller
 class GameViewController: NSViewController {
-
-    var renderer: Renderer!
+    override var acceptsFirstResponder: Bool { return true }
     var mtkView: MTKView!
-
+    var renderer: Renderer!
+    
+    override func keyDown(with event: NSEvent) {
+        guard let characters = event.characters else { return }
+        for character in characters {
+            switch character {
+            case "w":
+                renderer.cameraPosition.z -= 1
+            case "s":
+                renderer.cameraPosition.z += 1
+            case "a":
+                renderer.cameraPosition.x -= 1
+            case "d":
+                renderer.cameraPosition.x += 1
+            case " ":
+                if event.modifierFlags.contains(.shift) {
+                    renderer.cameraPosition.y -= 1
+                } else {
+                    renderer.cameraPosition.y += 1
+                }
+            default:
+                super.keyDown(with: event)
+                break
+            }
+        }
+        //mtkView.setNeedsDisplay(mtkView.bounds)
+    }
+    
+    override func viewDidAppear() {
+        super.viewDidAppear()
+        self.view.window?.makeFirstResponder(self)
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
 
