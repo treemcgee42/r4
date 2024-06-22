@@ -46,13 +46,16 @@ void rtKernel(constant Uniforms& uniforms [[buffer(0)]],
     
     intersector<> intersector;
     intersection_result<> intersection;
-    intersection = intersector.intersect(r, accelerationStructure, functionTable);
+    float3 normal;
+    intersection = intersector.intersect(r, accelerationStructure, functionTable, normal);
     
-    float3 color = float3(0);
+    float3 color;
     if (intersection.type == intersection_type::bounding_box) {
-        float x = float(threadPositionInGrid.x) / outTexture.get_width();
-        float y = float(threadPositionInGrid.y) / outTexture.get_height();
-        color = float3(x, y, 0);
+        //color = float3(1, 0, 0);
+        color = 0.5 * (normal + float3(1.0));
+    } else {
+        float a = 0.5 * (normalize(r.direction).y + 1.0);
+        color = (1.0 - a) * float3(1.0) + a * float3(0.5, 0.7, 1.0);
     }
     
     outTexture.write(float4(color, 1.0), threadPositionInGrid);
@@ -139,6 +142,7 @@ hitVoxel(Grid3dView grid3dView, const device int* grid3dData,
 struct VoxelVolumeIntersectionResult {
     bool intersected;
     float distance;
+    float3 normal;
 };
 
 #define EPSILON 0.000001
@@ -209,6 +213,21 @@ amanatidesWooAlgorithm(float3 rayOrigin,
     }
     
     float distance = tMin;
+    float3 normal;
+    float3 hitPoint = rayOrigin + rayDirectionNormalized * tMin;
+    if (fabs(hitPoint.x - boxMin.x) < EPSILON) {
+        normal = float3(-1, 0, 0);
+    } else if (fabs(hitPoint.x - boxMax.x) < EPSILON) {
+        normal = float3(1, 0, 0);
+    } else if (fabs(hitPoint.y - boxMin.y) < EPSILON) {
+        normal = float3(0, -1, 0);
+    } else if (fabs(hitPoint.y - boxMax.y) < EPSILON) {
+        normal = float3(0, 1, 0);
+    } else if (fabs(hitPoint.z - boxMin.z) < EPSILON) {
+        normal = float3(0, 0, -1);
+    } else if (fabs(hitPoint.z - boxMax.z) < EPSILON) {
+        normal = float3(0, 0, 1);
+    }
     while (currentIdx.x < (int)grid3dView.xExtent &&
            currentIdx.x >= 0 &&
            currentIdx.y < (int)grid3dView.yExtent &&
@@ -217,7 +236,7 @@ amanatidesWooAlgorithm(float3 rayOrigin,
            currentIdx.z >= 0) {
         if (hitVoxel(grid3dView, grid3dData,
                      currentIdx.x, currentIdx.y, currentIdx.z)) {
-            return { true, distance };
+            return { true, distance, normalize(normal) };
         }
         
         if (tMaxs.x < tMaxs.y) {
@@ -225,25 +244,29 @@ amanatidesWooAlgorithm(float3 rayOrigin,
                 currentIdx.x += steps.x;
                 distance = tMaxs.x;
                 tMaxs.x += tDeltas.x;
+                normal = float3(-steps.x, 0, 0);
             } else {
                 currentIdx.z += steps.z;
                 distance = tMaxs.z;
                 tMaxs.z += tDeltas.z;
+                normal = float3(0, 0, -steps.z);
             }
         } else {
             if (tMaxs.y < tMaxs.z) {
                 currentIdx.y += steps.y;
                 distance = tMaxs.y;
                 tMaxs.y += tDeltas.y;
+                normal = float3(0, -steps.y, 0);
             } else {
                 currentIdx.z += steps.z;
                 distance = tMaxs.z;
                 tMaxs.z += tDeltas.z;
+                normal = float3(0, 0, -steps.z);
             }
         }
     }
     
-    return { false, 0.0 };
+    return { false, 0.0, float3(0.0) };
 }
 
 struct VoxelVolumeIntersectionResult
@@ -289,7 +312,8 @@ BoundingBoxResult boundingBoxIntersectionFunction(float3 origin [[origin]],
                                                   float maxDistance [[max_distance]],
                                                   uint primitiveIndex [[primitive_id]],
                                                   const device void* perPrimitiveData [[primitive_data]],
-                                                  const device int* grid3dData [[buffer(0)]]) {
+                                                  const device int* grid3dData [[buffer(0)]],
+                                                  ray_data float3 & normal [[payload]]) {
     VoxelVolumeData voxelVolumeData = ((const device VoxelVolumeData*)perPrimitiveData)[primitiveIndex];
     
     BoundingBox box = voxelVolumeData.boundingBox;
@@ -305,6 +329,7 @@ BoundingBoxResult boundingBoxIntersectionFunction(float3 origin [[origin]],
     // --- Voxel volume intersection
 
     const struct VoxelVolumeIntersectionResult voxelVolumeIntersectionResult = amanatidesWooAlgorithm(origin, normalize(direction), rayBoxIntersectionResult.tEnterOrMin, rayBoxIntersectionResult.tExitOrMax, float3(1.0), box.min, box.max, voxelVolumeData.grid3dView, grid3dData);
+    normal = voxelVolumeIntersectionResult.normal;
     
     // ---
     
