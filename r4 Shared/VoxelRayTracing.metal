@@ -143,12 +143,19 @@ struct VoxelVolumeIntersectionResult {
 
 #define EPSILON 0.000001
 #define IS_ZERO(x) (fabs(x) < EPSILON)
-#define IS_POSITIVE(x) ((x) > EPSILON)
-#define IS_NEGATIVE(x) ((x) < -EPSILON)
 
+// Parameters:
+// - `rayIntersectionTMin`: the time at which the ray (described by
+// `rayOrigin + t * rayDirectionNormalized`) intersects the voxel volume.
+// - `rayIntersectionTMin`: the time at which the ray (described by
+// `rayOrigin + t * rayDirectionNormalized`) exits the voxel volume.
+// - `boxMin`: the coordinates of the minimal corner of the voxel volume,
+//             in world space.
+// - `boxMax`: the coordinates of the maximal corner of the voxel volume,
+//             in world space.
 struct VoxelVolumeIntersectionResult
 amanatidesWooAlgorithm(float3 rayOrigin,
-                       float3 rayDirection,
+                       float3 rayDirectionNormalized,
                        float rayIntersectionTMin,
                        float rayIntersectionTMax,
                        float3 voxelSize,
@@ -156,107 +163,60 @@ amanatidesWooAlgorithm(float3 rayOrigin,
                        float3 boxMax,
                        Grid3dView grid3dView,
                        const device int* grid3dData) {
-    float tMin = rayIntersectionTMin;
-    float tMax = rayIntersectionTMax;
-    const float3 rayStart = rayOrigin + rayDirection * tMin;
+    const float tMin = rayIntersectionTMin;
+    const float tMax = rayIntersectionTMax;
+    const float3 rayStart = rayOrigin + rayDirectionNormalized * tMin;
     
-    float3 currentIdxPrecise = (rayStart - boxMin) / voxelSize;
-    float3 fractionalPart = currentIdxPrecise - floor(currentIdxPrecise);
-    int3 currentIdx = int3(floor(currentIdxPrecise));
-    if (IS_ZERO(fractionalPart.x - 1.f)) {
-        currentIdx.x += 1;
-    }
-    if (IS_ZERO(fractionalPart.y - 1.f)) {
-        currentIdx.y += 1;
-    }
-    if (IS_ZERO(fractionalPart.z - 1.f)) {
-        currentIdx.z += 1;
-    }
-
     // For the purposes of the algorithm, we consider a point to be inside a voxel
     // if, componentwise, voxelMinCorner <= p < voxelMaxCorner.
     
-    int3 steps;
-    steps.x = IS_POSITIVE(rayDirection.x) - IS_NEGATIVE(rayDirection.x);
-    steps.y = IS_POSITIVE(rayDirection.y) - IS_NEGATIVE(rayDirection.y);
-    steps.z = IS_POSITIVE(rayDirection.z) - IS_NEGATIVE(rayDirection.z);
+    const float3 rayStartInVoxelSpace = rayStart - boxMin;
+    // In voxel units, in voxel space. Clamp to account for precision errors.
+    int3 currentIdx = clamp(int3(floor(rayStartInVoxelSpace / voxelSize)),
+                            int3(0),
+                            int3(grid3dView.xExtent - 1,
+                                 grid3dView.yExtent - 1,
+                                 grid3dView.zExtent - 1));
+
+    int3 steps = int3(sign(rayDirectionNormalized));
+    float3 tDeltas = abs(voxelSize / rayDirectionNormalized);
     
-    float3 tDeltas = abs(voxelSize / rayDirection);
+    // tMaxs is, componentwise, the (total) time it will take for the ray to enter
+    // the next voxel.
+    // To compute tMax for a component:
+    // - If rayDirection is positive, then the next boundary is in the next voxel.
+    // - If rayDirection is negative, the the next boundary is at the start of the
+    //   same voxel.
     
-    // (currentIdx + off) is, componentwise, the index of the next voxel
-    // boundary in the direction of the ray.
-    //
-    // Consider voxelSize = (1, 1, 1) and we're at point (0, 1.5, 3) with
-    // rayDirection = (1, -0.2, -0.3). Then the point lies in voxel
-    // (0, 1, 3). In this case, off should be (1, 0, -1).
+    // Multiply by voxelSize to get back to units of t.
+    float3 nextBoundaryInVoxelSpace = float3(currentIdx + int3(steps > int3(0))) * voxelSize;
+    float3 tMaxs = tMin + (nextBoundaryInVoxelSpace - rayStartInVoxelSpace) / rayDirectionNormalized;
     
-    // Attempt 2
-    // int3 off = int3(steps == int3(1));
-    int3 off;
-    if (steps.x == 1) {
-        off.x = 1;
-    } else {
-        if (IS_ZERO(currentIdxPrecise.x - (float)currentIdx.x)) {
-            off.x = -1;
-        } else {
-            off.x = 0;
-        }
-    }
-    if (steps.y == 1) {
-        off.y = 1;
-    } else {
-        if (IS_ZERO(currentIdxPrecise.y - (float)currentIdx.y)) {
-            off.y = -1;
-        } else {
-            off.y = 0;
-        }
-    }
-    if (steps.z == 1) {
-        off.z = 1;
-    } else {
-        if (IS_ZERO(currentIdxPrecise.z - (float)currentIdx.z)) {
-            off.z = -1;
-        } else {
-            off.z = 0;
-        }
-    }
-    const float3 nextBoundary = boxMin + float3(currentIdx + off) * voxelSize;
-    float3 tMaxs = tMin + abs((nextBoundary - rayStart) / rayDirection);
-//    // Attempt 1
-//    float3 tMaxs = tMin + abs(float3(currentIdx + max(int3(0), steps)) * voxelSize - (rayStart - boxMin)) / abs(rayDirection);
-    
-    if (IS_ZERO(rayDirection.x)) {
+    if (IS_ZERO(rayDirectionNormalized.x)) {
         steps.x = 0;
         tDeltas.x = tMax + 1;
         tMaxs.x = tMax + 1;
     }
-    if (IS_ZERO(rayDirection.y)) {
+    if (IS_ZERO(rayDirectionNormalized.y)) {
         steps.y = 0;
         tDeltas.y = tMax + 1;
         tMaxs.y = tMax + 1;
     }
-    if (IS_ZERO(rayDirection.z)) {
+    if (IS_ZERO(rayDirectionNormalized.z)) {
         steps.z = 0;
         tDeltas.z = tMax + 1;
         tMaxs.z = tMax + 1;
     }
     
     float distance = tMin;
-    bool hit = false;
-//    hit = hitVoxel(grid3dView, grid3dData,
-//                   currentIdx.x, currentIdx.y, currentIdx.z);
-//    if (hit) {
-//        return { true, distance };
-//    }
     while (currentIdx.x < (int)grid3dView.xExtent &&
            currentIdx.x >= 0 &&
            currentIdx.y < (int)grid3dView.yExtent &&
            currentIdx.y >= 0 &&
            currentIdx.z < (int)grid3dView.zExtent &&
            currentIdx.z >= 0) {
-        hit = hitVoxel(grid3dView, grid3dData,
-                       currentIdx.x, currentIdx.y, currentIdx.z);
-        if (hit) {
+        if (hitVoxel(grid3dView, grid3dData,
+                     currentIdx.x, currentIdx.y, currentIdx.z)) {
             return { true, distance };
         }
         
@@ -283,7 +243,7 @@ amanatidesWooAlgorithm(float3 rayOrigin,
         }
     }
     
-    return { hit, distance };
+    return { false, 0.0 };
 }
 
 struct VoxelVolumeIntersectionResult
@@ -336,7 +296,7 @@ BoundingBoxResult boundingBoxIntersectionFunction(float3 origin [[origin]],
     
     //  --- Ray-box intersection test
     
-    const struct RayBoxIntersectionResult rayBoxIntersectionResult = rayBoxIntersection(origin, direction, minDistance, maxDistance, box.min, box.max);
+    const struct RayBoxIntersectionResult rayBoxIntersectionResult = rayBoxIntersection(origin, normalize(direction), minDistance, maxDistance, box.min, box.max);
     if (!rayBoxIntersectionResult.intersected) {
         return { false, 0.0 };
     }
@@ -344,7 +304,7 @@ BoundingBoxResult boundingBoxIntersectionFunction(float3 origin [[origin]],
     
     // --- Voxel volume intersection
 
-    const struct VoxelVolumeIntersectionResult voxelVolumeIntersectionResult = simpleRayMarch(origin, direction, rayBoxIntersectionResult.tEnterOrMin, rayBoxIntersectionResult.tExitOrMax, float3(1.0), box.min, box.max, voxelVolumeData.grid3dView, grid3dData);
+    const struct VoxelVolumeIntersectionResult voxelVolumeIntersectionResult = amanatidesWooAlgorithm(origin, normalize(direction), rayBoxIntersectionResult.tEnterOrMin, rayBoxIntersectionResult.tExitOrMax, float3(1.0), box.min, box.max, voxelVolumeData.grid3dView, grid3dData);
     
     // ---
     
