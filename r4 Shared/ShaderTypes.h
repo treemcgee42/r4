@@ -45,5 +45,28 @@ typedef struct
     matrix_float4x4 modelViewMatrix;
 } Uniforms;
 
+typedef struct {
+    vector_float3 min;
+    vector_float3 max;
+} BoundingBox;
+
+struct Camera {
+    vector_float3 position;
+    vector_float3 direction;
+    float fov;
+};
+
+typedef struct {
+    size_t startIdx;
+    uint xExtent;
+    uint yExtent;
+    uint zExtent;
+} Grid3dView;
+
+typedef struct {
+    BoundingBox boundingBox;
+    Grid3dView grid3dView;
+} VoxelVolumeData;
+
 #endif /* ShaderTypes_h */
 

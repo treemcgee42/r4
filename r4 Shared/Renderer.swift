@@ -13,17 +13,6 @@ import simd
 
 let maxBuffersInFlight = 3
 
-struct Camera {
-    var position: SIMD3<Float>
-    var _pad1: Float = 0
-    var direction: SIMD3<Float>
-    var _pad2: Float = 0
-    var fov: Float
-    var _pad3: Float = 0
-    var _pad4: Float = 0
-    var _pat5: Float = 0
-}
-
 class Renderer: NSObject, MTKViewDelegate {
     
     public let device: MTLDevice
@@ -67,9 +56,10 @@ class Renderer: NSObject, MTKViewDelegate {
         
         // --- temporary for testing
         
-        _ = voxelVolumeSystem.createEmptyVoxelVolume(
-            corner1: SIMD3<Float>(-1, -1, -6),
-            corner2: SIMD3<Float>(0, 0, -5))
+//        _ = voxelVolumeSystem.createEmptyVoxelVolume(
+//            min: SIMD3<Float>(-3, -3, -10),
+//            max: SIMD3<Float>(2, 2, -5))
+        _ = voxelVolumeSystem.createSphere(center: SIMD3<Float>(0, 0, -20), radius: 7)
 
         self.accelerationStructure = voxelVolumeSystem.makeAccelerationStructure(device: device)!
         self.voxelComputePipelineState = voxelVolumeSystem.createComputePipeline(device: device, shaderLibrary: library)!
